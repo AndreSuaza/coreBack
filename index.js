@@ -1,6 +1,6 @@
 const express = require('express');
 require('dotenv').config();
-const cors = require('cors')
+const cors = require('cors');
 
 const { dbConnection } = require('./database/config');
 
@@ -8,19 +8,18 @@ const { dbConnection } = require('./database/config');
 const app = express();
 
 //Configurar CORS
-app.use(cors());        
+app.use(cors());   
+
+//Lectrua y parseo del Body
+app.use(express.json());    
 
 //DB
 dbConnection();
 
 //Rutas
-app.get('/', (req, res) => {
 
-    res.json({
-        ok: true,
-        msg: 'holamundo'
-    });
+app.use( '/api/users' , require('./routes/users'));
+app.use( '/api/login' , require('./routes/auth'));
 
-}  );
 
 app.listen( process.env.PORT , () => { console.log ('servidor corriendo 1')} );
