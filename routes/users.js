@@ -3,7 +3,7 @@
 */
 const { Router } = require('express');
 const { check } = require('express-validator');
-const { getUsers, createtUsers, updateUsers, deleteUser } = require('../controllers/users');
+const { getUsers, createUsers, updateUsers } = require('../controllers/users');
 const { validateFields } = require('../middlewares/validate-fields');
 const validateJwt = require('../middlewares/validate-jwt');
 const { validateJWT } = require('../middlewares/validate-jwt');
@@ -11,31 +11,29 @@ const { validateJWT } = require('../middlewares/validate-jwt');
 
 const router =  Router();
 
-router.get('/', validateJWT ,getUsers );
+router.get('/', getUsers );
+
+
 
 router.post(
     '/', 
     [
-        check('name','name is required').not().isEmpty(),
+        check('username','username is required').not().isEmpty(),
         check('password', 'password is required').not().isEmpty(),
         check('email', 'email is required').isEmail(),
         validateFields,
     ] ,
-    createtUsers );
+    createUsers );
 
 router.put(
-    '/:uid',
+    '/:id',
     [
         validateJWT,
-        check('name','name is required').not().isEmpty(),
-        check('role', 'role is required').not().isEmpty(),
+        check('username','name is required').not().isEmpty(),
+        check('rol', 'role is required').not().isEmpty(),
         check('email', 'email is required').isEmail(),
     ] ,
     updateUsers );
 
-router.delete(
-    '/:uid',
-    validateJWT,
-    deleteUser );
 
 module.exports = router;

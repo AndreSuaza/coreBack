@@ -1,51 +1,66 @@
-const User = require('../models/user');
-const { constructionError } = require('../helpers/errors');
-const { response } = require('express');
+const db = require('../models');
 const bcrypt = require('bcryptjs');
+const User = db.users;
+
+const { response } = require('express');
+const { constructionError } = require('../helpers/errors');
 const { generateJWT } = require('../helpers/jwt');
 
 const getUsers = async(req, res) => {
 
-    const users = await User.find({}, 'name email rol google');
-
-    res.json({
-        ok: true,
-        users
+    try {
+        const users = await User.findAll();
+        res.json({
+            ok: true,
+            users
+        });
+    } catch (error) {
+    console.log('Error', error) 
+    res.status(500).json({
+        ok : false,
+        msg : "Error inesperado revisar logs"
     });
+}
 
 };  
 
-const createtUsers = async(req, res = response) => {
+
+const createUsers = async(req, res = response) => {
 
     const { password, email } = req.body;
-
+    
     try {
-
-        const existEmail = await User.findOne({email});
-
+        
+        const existEmail = await User.findOne({ where: { email: email } });
+    
         if(existEmail) {
             return constructionError(res, 400, "El correo ya esta registrado");
         }
-
-        const user = new User ( req.body );
-
+        
+        const user =  req.body ;
+ 
         //Encriptar contraseña
         const salt = bcrypt.genSaltSync();
         user.password = bcrypt.hashSync( password, salt );
 
         //Guardar usuario
-        await user.save();
+        const resp = await User.create(user);
 
-        const token = await generateJWT( user.uid );
-        
+        //Generar Token 
+        const token = await generateJWT( resp.id );
+  
         res.json({
             ok: true,
-            user,
+            user: {
+                'id': resp.id,
+                'username': resp.username,
+                'email': resp.email
+            },
             token
         });
         
     } catch (error) {
-        
+        console.log('Error', error) 
         res.status(500).json({
             ok : false,
             msg : "Error inesperado revisar logs"
@@ -54,38 +69,48 @@ const createtUsers = async(req, res = response) => {
 
 };  
 
-
 const updateUsers = async(req, res = response) => {
 
-    const uid = req.params.uid;
+    const id = req.params.id;
+
     try {
 
-        const user = await User.findById(uid);
+        const user = await User.findByPk(id);
 
         if(!user) {
             return constructionError(res, 404, "El usuario no existe");
         }
 
         //TODO: Validar toquen y comprobar si es el usuario correcto
-        const { password, google, email, ...fields} = req.body;
-
+        const { password, email, ...fields} = req.body;
+        
         if( user.email !== email ) {
-            const existEmail = await User.findOne({ email: email });
+            const existEmail = await User.findOne({ where: { email: email } });
             if(existEmail) {
                 return constructionError(res, 400, 'Ya existe un usuario con ese email');
             }
         }
         
         fields.email = email;
-        const updatedUser = await User.findByIdAndUpdate( uid, fields, { new: true} );
+        console.log('fields', fields, id);
+        await User.update( 
+            {
+                'username': fields.username,
+                'email': fields.email
+            },
+            {
+                where: {
+                    id: id
+                  }
+            }
+        );
 
         res.json({
             ok: true,
-            user: updatedUser
         });
         
     } catch (error) {
-       
+
         res.status(500).json({
             ok : false,
             msg : "Error inesperado revisar logs"
@@ -94,39 +119,10 @@ const updateUsers = async(req, res = response) => {
    
 };    
 
-const deleteUser = async(req, res = response) => {
 
-    const uid = req.params.uid;
-
-    try {
-
-        const user = await User.findById(uid);
-
-        if(!user) {
-            return constructionError(res, 404, "El usuario no existe");
-        }
-
-        await User.findByIdAndDelete(uid);
-
-            
-        res.status(200).json({
-            ok : true,
-            msg : 'Usuario Eliminado'
-        });
-        
-    } catch (error) {
-        
-        res.status(500).json({
-            ok : false,
-            msg : "Error inesperado revisar logs"
-        });
-    }
-   
-};    
 
 module.exports = {
     getUsers,
-    createtUsers,
-    updateUsers,
-    deleteUser,
+    createUsers,
+    updateUsers
 }

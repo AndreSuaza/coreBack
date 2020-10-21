@@ -1,39 +1,24 @@
-const { Schema, model } = require('mongoose');
-
-const UserSchema = Schema ({
-
-    name: {
-        type: String,
-        requiered: true,
-    },
-    email: {
-        type: String,
-        requiered: true,
-        unique: true
+module.exports = (dbConnection, DataTypes) => {
+  const user = dbConnection.define("user", {
+    username: {
+      type: DataTypes.STRING,
+      allowNull: false
     },
     password: {
-        type: String,
-        requiered: true,
+      type: DataTypes.STRING,
+      allowNull: false
     },
-    img: {
-        type: String
+    email: {
+      type: DataTypes.STRING,
+      requiered: true,
+      unique: true
     },
-    rol: {
-        type: String,
-        requiered: true,
-        default: 'USER_ROL'
-    },
-    google: {
-        type: Boolean,
-        default: false
-    },
+    state: {
+      type: DataTypes.STRING,
+      requiered: true,
+      defaultValue: 1
+    }
+  });
 
-});
-
-UserSchema.method('toJSON', function () {
-    const { __v, _id, password, ...object} = this.toObject();
-    object.uid = _id;
-    return object;
-});
-
-module.exports = model( 'User', UserSchema );
+  return user;
+}
